@@ -75,7 +75,47 @@ int main()
     std::cout << "Pt1 : Total is " << total << "\n";
 
     // Got to go between node "YOU" and "SAN"
+    std::string you("YOU");
+    std::string santa("SAN");
+    Node *youNode = findNode(you);
+    Node *santaNode = findNode(santa);
+    std::vector< Node * > santaTrack;
+    Node *index = santaNode;
+    while(index != nullptr)
+    {
+        santaTrack.push_back(index);
+        index = index->parent;
+    }
+    bool foundLink = false;
+    int distance = 0;
+    total = 0;
+    Node *youLink = nullptr;
+    index = youNode->parent;
+    while( true )
+    {
+        if(std::find(santaTrack.begin(), santaTrack.end(), index) != santaTrack.end())
+        {
+            // First time we are here we are at the pivot node.
+            youLink = index;
+            break;
+        }
+        distance++; // only add to distance after a failure.
+        index = index->parent;
+    }
 
+    total = distance;
+    index = santaNode->parent;
+    // now go from santa to youLink
+    while(true )
+    {
+        if( index == youLink )
+        {
+            break;
+        }
+        distance++;
+        index = index->parent;
+    }
+    std::cout << "distance is " << distance << "\n";
     input.close();
     return 0;
 }
