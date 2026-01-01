@@ -30,11 +30,20 @@ Recipe *findRecipe(std::string &s)
 
 std::map< std::string, int > production; // all things produced so far
 
+void printProduced(void)
+{
+    for(auto a : production)
+    {
+        std::cout << " [" << a.first << "] = " << a.second << "\n";
+    }
+}
+
+int totalOreProduced = 0;
+
 // need 1 fuel:  generate 7 A
 //  need 7 A:  generate 10 ore
 //   - 10 ore generated, consume 10 to produce 10 A
 //  - 10 A generated, consume 7 to generate 1 fuel
-
 void generate(std::string s, int count)
 {
     Recipe *r = findRecipe(s);
@@ -43,40 +52,43 @@ void generate(std::string s, int count)
     // find out how many total consumptions that we need to do
     // only check self
     int numberToGenerate = count - production[s];
-    int timesToGenerate = std::max<int>(1, (numberToGenerate / r->name.second)); // at least one time.
-    if( numberToGenerate > 0 )
+    int timesToGenerate = (numberToGenerate + r->name.second - 1 ) / r->name.second; // at least one time.
+    
+    std::cout << "Recipe for " << r->name.first << " requires ";
+    for(auto a : r->inputs) { std::cout << a.second << " [" << a.first << "], "; };
+    std::cout << "\n";
+    printProduced();
+
+    if( numberToGenerate <= 0 ) 
     {
-        for(int i=0;i<r->inputs.size();i++)
-        {
-            generate(r->inputs[i].first, r->inputs[i].second * timesToGenerate);
-        }
+        // shortcut to exit.  We don't have to generate any more of OURSELVES.
+        return;
     }
 
-    // consume even if we didn't need to generate
+    // ensure we have generated enough inputs to consume
     for(int i=0;i<r->inputs.size();i++)
     {
-        production[r->inputs[i].first] -= r->inputs[i].second * timesToGenerate;
-        if( production[r->inputs[i].first] < 0 ) 
-        {
-            std::cout << "NEGATIVE\n";
-        }
+        generate(r->inputs[i].first, r->inputs[i].second * timesToGenerate);
+        // and now, before we continue on to the next dependency, consume the amount we need of ourselves!
+        production[r->inputs[i].first] -= r->inputs[i].second * timesToGenerate; 
     }
 
     // and generate our output
     production[r->name.first] += r->name.second * timesToGenerate;
+    if( r->name.first == "ORE") totalOreProduced += r->name.second * timesToGenerate;
 }
 
-int calculateOreForOneFuel(void)
+void calculateOreForOneFuel(void)
 {
     production.clear();
     generate("FUEL", 1);
-    return production["ORE"];
+    return;
 }
 
 int main(void)
 {
     std::ifstream input;
-    input.open("example.txt");
+    input.open("input.txt");
     std::string currentLine;
 
     while( std::getline(input, currentLine) )
@@ -116,8 +128,8 @@ int main(void)
     ore.name = std::make_pair("ORE", 1);
     recipes.push_back(ore); // ore is free.
 
-    int result = calculateOreForOneFuel();
-    std::cout << "Total Ore is " << result << "\n";
+    calculateOreForOneFuel();
+    std::cout << "Total Ore is " << totalOreProduced << "\n";
 
     input.close();
     return 0;
