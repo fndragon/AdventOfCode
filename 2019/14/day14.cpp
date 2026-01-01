@@ -40,22 +40,30 @@ void generate(std::string s, int count)
     Recipe *r = findRecipe(s);
     if( nullptr == r ) { std::cout << "NOOO\n"; return; }
     // produce this recipe - generate inputs first
-    for(int i=0;i<r->inputs.size();i++)
+    // find out how many total consumptions that we need to do
+    // only check self
+    int numberToGenerate = count - production[s];
+    int timesToGenerate = std::max<int>(1, (numberToGenerate / r->name.second)); // at least one time.
+    if( numberToGenerate > 0 )
     {
-        generate(r->inputs[i].first, r->inputs[i].second);
+        for(int i=0;i<r->inputs.size();i++)
+        {
+            generate(r->inputs[i].first, r->inputs[i].second * timesToGenerate);
+        }
     }
 
-    // now consume our specific inputs
+    // consume even if we didn't need to generate
     for(int i=0;i<r->inputs.size();i++)
     {
-        production[r->inputs[i].first] -= r->inputs[i].second;
+        production[r->inputs[i].first] -= r->inputs[i].second * timesToGenerate;
         if( production[r->inputs[i].first] < 0 ) 
         {
             std::cout << "NEGATIVE\n";
         }
     }
+
     // and generate our output
-    production[r->name.first] += r->name.second * count;
+    production[r->name.first] += r->name.second * timesToGenerate;
 }
 
 int calculateOreForOneFuel(void)
@@ -85,12 +93,14 @@ int main(void)
         c = strtok(nullptr, " ,");
         std::string name(c);
         r.inputs.push_back(std::make_pair(name, count));
-        while( c = strtok(nullptr, " ,") )
+        c = strtok(nullptr, " ,");
+        while( c )
         {
             count = std::atoi(c);
             c = strtok(nullptr, " ,");
             name = c;
             r.inputs.push_back(std::make_pair(name, count));
+            c = strtok(nullptr, " ,");
         }
 
         // Process the result the same way
