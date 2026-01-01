@@ -13,8 +13,8 @@
 
 struct Recipe
 {
-    std::pair< std::string, int > name; // name, quantity
-    std::vector< std::pair< std::string, int > > inputs; // name, quantity
+    std::pair< std::string, long long > name; // name, quantity
+    std::vector< std::pair< std::string, long long > > inputs; // name, quantity
 };
 
 std::vector< Recipe > recipes;
@@ -28,7 +28,7 @@ Recipe *findRecipe(std::string &s)
     return nullptr;
 }
 
-std::map< std::string, int > production; // all things produced so far
+std::map< std::string, long long > production; // all things produced so far
 
 void printProduced(void)
 {
@@ -38,26 +38,26 @@ void printProduced(void)
     }
 }
 
-int totalOreProduced = 0;
+long long totalOreProduced = 0;
 
 // need 1 fuel:  generate 7 A
 //  need 7 A:  generate 10 ore
 //   - 10 ore generated, consume 10 to produce 10 A
 //  - 10 A generated, consume 7 to generate 1 fuel
-void generate(std::string s, int count)
+void generate(std::string s, long long count)
 {
     Recipe *r = findRecipe(s);
     if( nullptr == r ) { std::cout << "NOOO\n"; return; }
     // produce this recipe - generate inputs first
     // find out how many total consumptions that we need to do
     // only check self
-    int numberToGenerate = count - production[s];
-    int timesToGenerate = (numberToGenerate + r->name.second - 1 ) / r->name.second; // at least one time.
+    long long numberToGenerate = count - production[s];
+    long long timesToGenerate = (numberToGenerate + r->name.second - 1 ) / r->name.second; // at least one time.
     
-    std::cout << "Recipe for " << r->name.first << " requires ";
-    for(auto a : r->inputs) { std::cout << a.second << " [" << a.first << "], "; };
-    std::cout << "\n";
-    printProduced();
+    //std::cout << "Recipe for " << r->name.first << " requires ";
+    //for(auto a : r->inputs) { std::cout << a.second << " [" << a.first << "], "; };
+    //std::cout << "\n";
+    //printProduced();
 
     if( numberToGenerate <= 0 ) 
     {
@@ -83,6 +83,15 @@ void calculateOreForOneFuel(void)
     production.clear();
     generate("FUEL", 1);
     return;
+}
+
+long long calcOreForFuel( long long fuel )
+{
+    totalOreProduced = 0;
+    production.clear();
+    generate("FUEL", fuel);
+    std::cout << " ore requirements for " << fuel << " = " << totalOreProduced << "\n";
+    return totalOreProduced;
 }
 
 int main(void)
@@ -131,6 +140,24 @@ int main(void)
     calculateOreForOneFuel();
     std::cout << "Total Ore is " << totalOreProduced << "\n";
 
+    // part 2:  Binary searching (alternative is reversing the recipe tree, but that becomes annoying to think about)
+    long long lower = 0;
+    long long upper = 1000000000000;
+    while (lower != upper)
+    {
+        long long mid = lower + (upper - lower) / 2;
+
+        if (calcOreForFuel(mid) <= 1000000000000)
+        {
+            lower = mid + 1;
+        }
+        else
+        {
+            upper = mid;
+        }
+    }
+
+    std::cout << "Max fuel for 1T ore: " << lower - 1 << "\n";
     input.close();
     return 0;
 }
